@@ -3,3 +3,4 @@
 .venv
 dviz-env/
 .idea
+*.png
