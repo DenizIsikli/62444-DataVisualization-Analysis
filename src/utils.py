@@ -61,3 +61,60 @@ def load_data_from_google_drive(url):
     url_processed='https://drive.google.com/uc?id=' + url.split('/')[-2]
     df = pd.read_csv(url_processed)
     return df
+
+
+# Function to remove outliers based on the  Interquartile Range (IQR) method for a given column
+def remove_outliers(df, column):
+    Q1 = df[column].quantile(0.25)
+    Q3 = df[column].quantile(0.75)
+    IQR = Q3 - Q1
+    lower_bound = Q1 - 3.75 * IQR #3.75 was found to fit best for the entire dataset
+    upper_bound = Q3 + 3.75 * IQR #3.75 was found to fit best for the entire dataset
+    return df[(df[column] >= lower_bound) & (df[column] <= upper_bound)]
+
+
+# Function to display histograms for a given column
+def plot_histogram(df, column, color, title, ax, x_label, y_label, bins=None):
+    # Determine the number of bins based on the data's range and a reasonable bin width
+    if bins is None: #If bins parameter isn't specified, calculate bin width
+        bin_width = (df[column].max() - df[column].min()) / 100  # adjust int as necessary for bin size
+        bins = np.arange(df[column].min(), df[column].max() + bin_width, bin_width)
+    # If bins is an integer, it will define the number of bins directly
+    # If bins is a sequence, it will define the bin edges directly
+
+    ax.hist(df[column], bins=bins, color=color, alpha=0.7)
+    ax.set_title(title, fontsize=14, weight='bold')
+    ax.set_xlabel(x_label, fontsize=12)
+    ax.set_ylabel(y_label, fontsize=12)
+
+    # Remove top and right border for a cleaner look
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+
+    # Simplify the y-axis to show fewer tick marks
+    ax.yaxis.set_major_locator(plt.MaxNLocator(5))
+
+
+# Function to create a scatter plot for two given columns
+def plot_scatter(df, x_column, y_column, color, title, ax, x_label, y_label):
+    ax.scatter(df[x_column], df[y_column], alpha=0.5, color=color, s=1)
+
+    # Trend line
+    z = np.polyfit(df[x_column], df[y_column], 1)
+    p = np.poly1d(z)
+    ax.plot(df[x_column], p(df[x_column]), color="red", linewidth=2, alpha=0.5, label=f'Linear trend line (y={z[0]:.2f}x+{z[1]:.2f})')
+
+     # Enhance readability
+    ax.set_title(title, fontsize=16, weight='bold')
+    ax.set_xlabel(x_label, fontsize=14)
+    ax.set_ylabel(y_label, fontsize=14)
+
+    # Remove gridlines and box border for a cleaner look
+    ax.grid(False)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['bottom'].set_color('gray')
+    ax.spines['left'].set_color('gray')
+
+    # Include a legend that explains the trend line
+    ax.legend()
