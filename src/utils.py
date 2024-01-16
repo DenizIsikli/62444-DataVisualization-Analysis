@@ -2,6 +2,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import plotly.express as px # Used for interactive visualizations
 
 
 def create_scatterplot(df, x_col, y_col, title, xlabel, ylabel):
@@ -333,3 +334,280 @@ def group_and_aggregate(df, group_column, agg_column=None, operation='count'):
         return df.groupby(group_column)[agg_column].mean().reset_index(name=agg_column + '_mean')
     else:
         return df.groupby(group_column)[group_column].count().reset_index(name='count')
+
+
+def plot_neo_lineplot(df, period, title, x_label, y_label):
+    fig, ax = plt.subplots(figsize=(7, 5))
+    neos_per_week = df.groupby(period)['id'].nunique()
+    neos_per_week.plot(kind='line', marker='o', ax=ax)
+    ax.set_title(title)
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+
+
+def plot_neo_histogram(df, distribution, title, x_label, y_label):
+    fig, ax = plt.subplots(figsize=(7, 5))
+    sizes = df[distribution]
+    ax.hist(sizes, bins=20, color='skyblue', edgecolor='black')
+    ax.set_title(title)
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+
+
+def plot_neo_bar(df, period, title, x_label, y_label):
+    fig, ax = plt.subplots(figsize=(7, 5))
+    average_size_per_week = df.groupby(period)['estimated_diameter_min (m)'].mean()
+    average_size_per_week.plot(kind='bar', color='coral', ax=ax)
+    ax.set_title(title)
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+    ticks = [0] + list(range(4, max(df['week']) + 1, 5))
+    ax.set_xticks(ticks)
+
+
+def plot_neo_boxplot(df, x, y, title, x_label, y_label):
+    fig, ax = plt.subplots(figsize=(10, 6))
+    sns.boxplot(data=df, x=x, y=y, ax=ax)
+    ax.set_title(title)
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+    ticks = [0] + list(range(4, max(df['week']) + 1, 5))
+    ax.set_xticks(ticks)
+
+
+def plot_pie_chart(data, labels_column, values_column, title, colors, explode=None):
+    fig, ax = plt.subplots()
+    wedges, texts, autotexts = ax.pie(
+        data[values_column],
+        explode=explode,
+        autopct='%1.1f%%',
+        startangle=90,
+        colors=colors
+    )
+
+    # Change the color and increase the size of the percentage texts
+    for text in autotexts:
+        text.set_color('white')  # Change to a color that contrasts well with your pie colors
+        text.set_size(10)  # You can adjust the size as needed
+        text.set_weight('bold')  # Optional: set to 'bold' for better readability
+
+    # We'll use the 'labels_column' to add the legend to the pie chart.
+    ax.legend(
+        wedges,
+        data[labels_column],
+        title="",
+        bbox_to_anchor=(1.4, 0.5),
+        loc='center right'
+    )
+    ax.set_aspect('equal')  # Equal aspect ratio ensures that the pie chart is circular
+    plt.title(title, fontsize=16, weight='bold')
+
+
+def plot_scatter_ass2(df, x_column, y_column, color, title, ax, x_label, y_label, trendline=False):
+    # Scatter plot
+    scatter = ax.scatter(df[x_column], df[y_column], alpha=0.5, color=color, s=10)
+
+    # Optional trend line
+    if trendline:
+        z = np.polyfit(df[x_column].dropna(), df[y_column].dropna(), 1)
+        p = np.poly1d(z)
+        ax.plot(df[x_column], p(df[x_column]), color="red", linewidth=1, alpha=0.5, label=f'Linear trend (y={z[0]:.2f}x+{z[1]:.2f})')
+
+    # Logarithmic scale for the x-axis
+    ax.set_xscale('log')
+    # Enhance readability
+    ax.set_title(title, fontsize=16, weight='bold')
+    ax.set_xlabel(x_label, fontsize=14)
+    ax.set_ylabel(y_label, fontsize=14)
+
+    # Clean up the plot - remove gridlines and box border for a cleaner look
+    ax.grid(True, which="both", ls="--", lw=0.5, color='gray', alpha=0.7)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['bottom'].set_color('gray')
+    ax.spines['left'].set_color('gray')
+
+    # Include a legend if a trend line is plotted
+    if trendline:
+        legend = ax.legend(frameon=False, loc='upper left')
+        for text in legend.get_texts():
+            text.set_color('gray')
+
+
+def plot_interactive_scatter(df, x_column, y_column, title, x_label, y_label):
+    df[x_column] = pd.to_numeric(df[x_column], errors='coerce')
+    df[y_column] = pd.to_numeric(df[y_column], errors='coerce')
+    df = df.dropna(subset=[x_column, y_column])
+
+    # Create the interactive scatter plot with Plotly Express
+    fig = px.scatter(df, x=x_column, y=y_column, log_x=True, color_discrete_sequence=['green'],
+                     title=title, labels={x_column: x_label, y_column: y_label})
+
+    # Improve layout for better readability
+    fig.update_layout(
+        legend_title_text='Legend',
+        plot_bgcolor='white',
+        xaxis=dict(
+            title=x_label,
+            linecolor='black',
+            showgrid=False,
+            gridcolor='LightGrey',
+            gridwidth=0.5,
+        ),
+        yaxis=dict(
+            title=y_label,
+            linecolor='black',
+            showgrid=True,
+            gridcolor='LightGrey',
+            gridwidth=0.5,
+        ),
+        font=dict(
+            family="Arial, sans-serif",
+            size=12,
+            color="black"
+        )
+    )
+
+    # Update marker size and opacity for better visibility
+    fig.update_traces(marker=dict(size=8, opacity=0.7))
+
+    # Add interactive note
+    fig.add_annotation(
+        text="Interactive: Hover over data points for more information.",
+        align='left',
+        showarrow=False,
+        xref='paper',
+        yref='paper',
+        x=0,
+        y=1.07,
+        bordercolor='black',
+        borderwidth=1
+    )
+
+
+def plot_interactive_histogram(df, column, title, x_label):
+    # Convert the column to numeric and drop NaN values
+    df[column] = pd.to_numeric(df[column], errors='coerce')
+    df = df.dropna(subset=[column])
+
+    # Calculate the 95th percentile value
+    percentile_95 = df[column].quantile(0.95)
+
+    # Cap values at the 95th percentile
+    df[column] = np.where(df[column] > percentile_95, percentile_95, df[column])
+
+    # Create the histogram with Plotly Express
+    fig = px.histogram(df, x=column, nbins=50, title=title)
+
+    # Custom layout adjustments
+    fig.update_layout(
+        plot_bgcolor='white',  # Set the background color to white
+        xaxis=dict(
+            title=x_label,
+            linecolor='black',
+            showgrid=True,
+            gridcolor='LightGrey',
+            gridwidth=0.5,
+            fixedrange=True,
+        ),
+        yaxis=dict(
+            title='Count',
+            linecolor='black',
+            showgrid=True,
+            gridcolor='LightGrey',
+            gridwidth=0.5,
+        ),
+        font=dict(
+            family="Arial, sans-serif",
+            size=12,
+            color="black"
+        ),
+        # Add annotation for the last bin
+        annotations=[
+            dict(
+                x=percentile_95,
+                y=0,
+                xref="x",
+                yref="paper",
+                text="All data above 95th percentile, max size 5000 (m)",
+                showarrow=True,
+                arrowhead=5,
+                ax=-25,
+                ay=30
+            )
+        ]
+    )
+
+    # Update the marker color and the line color around the bars
+    fig.update_traces(marker_color='RoyalBlue', marker_line_color='rgb(8,48,107)',
+                      marker_line_width=1.5, opacity=0.6)
+
+    # Add interactive note
+    fig.add_annotation(
+        text="Interactive: Hover over bars for more information.",
+        align='left',
+        showarrow=False,
+        xref='paper',
+        yref='paper',
+        x=0,
+        y=1.07,
+        bordercolor='black',
+        borderwidth=1
+    )
+
+
+def plot_interactive_box(df, column, title, y_label):
+    # Ensure the data type of the column is numeric for Plotly
+    df[column] = pd.to_numeric(df[column], errors='coerce')
+
+    # Drop NaN values that could have been introduced during conversion
+    df = df.dropna(subset=[column])
+
+    # Filter out non-positive values for log scale
+    df = df[df[column] > 0]
+
+    # Create the interactive box plot with a customized outlier definition
+    fig = px.box(
+        df,
+        y=column,
+        title=title,
+        labels={column: y_label},
+        notched=True,  # Shows the confidence interval around the median
+        log_y=True,  # Apply a log scale to the y-axis
+        points='suspectedoutliers',  # Show only suspected outliers
+    )
+
+    # Improve layout
+    fig.update_layout(
+        plot_bgcolor='white',  # Set the background color to white
+        yaxis=dict(
+            title=y_label,
+            linecolor='black',
+            showgrid=True,
+            gridcolor='LightGrey',
+            gridwidth=0.5,
+        ),
+        font=dict(
+            family="Arial, sans-serif",
+            size=12,
+            color="black"
+        )
+    )
+
+    # Customize the box for better emphasis
+    fig.update_traces(boxmean=True,  # Show the mean of the distribution
+                      marker=dict(size=2, opacity=0.5),  # Reduce marker size for outliers
+                      line=dict(width=2))  # Increase linewidth to emphasize the box
+
+    # Add interactive note
+    fig.add_annotation(
+        text="Interactive: Hover over the plot for more information.",
+        align='left',
+        showarrow=False,
+        xref='paper',
+        yref='paper',
+        x=0,
+        y=1.07,
+        bordercolor='black',
+        borderwidth=1
+    )
