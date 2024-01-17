@@ -484,6 +484,8 @@ def plot_interactive_scatter(df, x_column, y_column, title, x_label, y_label):
         borderwidth=1
     )
 
+    fig.show()
+
 
 def plot_interactive_histogram(df, column, title, x_label):
     # Convert the column to numeric and drop NaN values
@@ -555,6 +557,8 @@ def plot_interactive_histogram(df, column, title, x_label):
         borderwidth=1
     )
 
+    fig.show()
+
 
 def plot_interactive_box(df, column, title, y_label):
     # Ensure the data type of the column is numeric for Plotly
@@ -611,3 +615,5 @@ def plot_interactive_box(df, column, title, y_label):
         bordercolor='black',
         borderwidth=1
     )
+
+    fig.show()
