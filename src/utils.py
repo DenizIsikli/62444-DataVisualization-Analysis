@@ -534,8 +534,8 @@ def plot_interactive_histogram(df, column, title, x_label):
                 text="All data above 95th percentile, max size 5000 (m)",
                 showarrow=True,
                 arrowhead=5,
-                ax=-25,
-                ay=30
+                ax=-40,
+                ay=25
             )
         ]
     )
@@ -617,3 +617,4 @@ def plot_interactive_box(df, column, title, y_label):
     )
 
     fig.show()
+
